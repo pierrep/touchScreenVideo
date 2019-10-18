@@ -4,6 +4,8 @@
 #include "ofxGui.h"
 #include "ofxXmlSettings.h"
 #include <fstream>
+#include "ofxOMXPlayer.h"
+#include "ofxRPiTouch.h"
 
 struct videoItem {
 	string title;
@@ -37,8 +39,10 @@ class ofApp : public ofBaseApp{
         void setupVideos();
         void setupIcons();
         void setupFonts();
+        void handleVideoTouch(int x, int y, int button);
 
-		ofVideoPlayer	video_player;
+		ofxOMXPlayer	video_player;
+		ofxOMXPlayerSettings vidsettings;
 		float			video_width;
 		float			video_height;
 		float			video_ratio;
@@ -107,4 +111,7 @@ class ofApp : public ofBaseApp{
 
 		// settings
 		ofxXmlSettings	settings;
+		
+		//RPI multitouch
+		ofxRPiTouch touch;
 };

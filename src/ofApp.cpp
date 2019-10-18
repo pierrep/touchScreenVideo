@@ -11,6 +11,12 @@ void ofApp::setup(){
     setupGui();
     setupIcons();
     setupFonts();
+    
+	vidsettings.useHDMIForAudio = true;	//default true
+	vidsettings.enableLooping = false;		//default true
+	vidsettings.enableTexture = true;		//default true
+	//vidsettings.listener = this;			//this app extends ofxOMXPlayerListener so it will receive events ;
+	video_player.setup(vidsettings);    
 
     // set up video sizes
     video_width = ofGetWidth();
@@ -36,9 +42,9 @@ void ofApp::setup(){
 // Launch Video (called from menu)
 //--------------------------------------------------------------
 void ofApp::launchVideo(unsigned int videoId) {
-	video_player.load(video_items[videoId].videoFile);
-	video_player.setLoopState(OF_LOOP_NONE);
-	video_player.play();
+	video_player.loadMovie(ofToDataPath(video_items[videoId].videoFile));
+	//video_player.setLoopState(OF_LOOP_NONE);
+	//video_player.play();
 	controlbar_start_time = ofGetElapsedTimeMillis();
 	show_controls = true;
 	paused = false;
@@ -83,16 +89,19 @@ void ofApp::setVideoPlaypause() {
 
 void ofApp::returnToMenu() {
 	show_menu = true;
-	video_player.stop();
+	video_player.close();
     fade_in_timer = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	video_player.update();
-    if (video_player.getPosition() > 0.9999f && show_menu == false) {
-		returnToMenu();
-	}
+	//video_player.update();
+    //if (video_player.getPosition() > 0.9999f && show_menu == false) {
+	//	returnToMenu();
+	//}
+	
+	
+	handleVideoTouch(touch.getCoordTouch().x, touch.getCoordTouch().y,touch.getButton());
 
 }
 
@@ -150,12 +159,13 @@ void ofApp::drawVideo() {
 
 	
 	//ofSetHexColor(0xFC4513);
-	ofSetColor(icon_highlight_color);
+	/*ofSetColor(icon_highlight_color);
 	progress_bar_played.x = progress_bar.x;
 	progress_bar_played.y = progress_bar.y;
 	progress_bar_played.width = progress_bar.width * video_player.getPosition();
 	progress_bar_played.height = progress_bar.height;
 	ofDrawRectRounded(progress_bar_played, 15);
+	*/
 
 	// get position of play/pause button
 	icon_playpause_pos_x = controlbar_width / 2 - icon_size / 2;
@@ -219,8 +229,8 @@ void ofApp::draw(){
 		gui.draw();
 		
 		font_stats.drawString("Controlbar start time: " + to_string(controlbar_start_time), 30, ofGetHeight() - 160);
-		font_stats.drawString("Video duration: " + to_string(video_player.getDuration()), 30, ofGetHeight() - 120);
-		font_stats.drawString("Video progress: " + to_string(video_player.getPosition()), 30, ofGetHeight() - 90);
+		//font_stats.drawString("Video duration: " + to_string(video_player.getDuration()), 30, ofGetHeight() - 120);
+		//font_stats.drawString("Video progress: " + to_string(video_player.getPosition()), 30, ofGetHeight() - 90);
 		font_stats.drawString("Video width: " + to_string(video_width), 30, ofGetHeight() - 60);
 		font_stats.drawString("Video height: " + to_string(video_height), 30, ofGetHeight() - 30);
 
@@ -273,13 +283,14 @@ void ofApp::mouseMoved(int x, int y ){
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
+	
 	if (!show_menu) {
 		if (x >= progress_bar.x &&
 			x <= progress_bar.x + progress_bar.width &&
 			y >= progress_bar.y &&
 			y <= progress_bar.y + progress_bar.height) {
 
-			video_player.setPosition((x - progress_bar.x) / progress_bar.width);
+	//		video_player.setPosition((x - progress_bar.x) / progress_bar.width);
 			controlbar_start_time = ofGetElapsedTimeMillis();
 		}
 	}
@@ -288,6 +299,12 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+	handleVideoTouch(x,y,button);
+}
+
+//--------------------------------------------------------------
+void ofApp::handleVideoTouch(int x, int y, int button)
+{
 	if (!show_menu) {
 		// handle clicking on play / pause button
 		if (x >= (icon_playpause_pos_x - icon_padding) &&
@@ -303,7 +320,7 @@ void ofApp::mouseReleased(int x, int y, int button){
 			y >= progress_bar.y &&
 			y <= progress_bar.y + progress_bar.height) {
 
-			video_player.setPosition((x - progress_bar.x) / progress_bar.width);
+		//	video_player.setPosition((x - progress_bar.x) / progress_bar.width);
 			controlbar_start_time = ofGetElapsedTimeMillis();
 		}
 		else if (x >= icon_back_background.x &&
@@ -327,7 +344,7 @@ void ofApp::mouseReleased(int x, int y, int button){
 				launchVideo(i);
 			}
 		}
-	}
+	}	
 }
 
 //--------------------------------------------------------------
