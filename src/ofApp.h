@@ -42,7 +42,7 @@ class ofApp : public ofBaseApp{
         void setupFonts();
         void handleVideoTouch(int x, int y, int button);
 
-		ofxOMXPlayer*	video_player;
+		ofxOMXPlayer	video_player;
 		ofxOMXPlayerSettings vidsettings;
 		float			video_width;
 		float			video_height;

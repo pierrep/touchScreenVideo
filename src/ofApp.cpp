@@ -23,9 +23,11 @@ void ofApp::setup(){
     setupIcons();
     setupFonts();
     
-	video_player = NULL;
+	vidsettings.useHDMIForAudio = true;	//default true
+	vidsettings.enableLooping = false;		//default true
+	vidsettings.enableTexture = true;		//default true
 	//vidsettings.listener = this;			//this app extends ofxOMXPlayerListener so it will receive events ;
-	//video_player->setup(vidsettings); 
+	video_player.setup(vidsettings); 
 
     // set up video sizes
     video_width = ofGetWidth();
@@ -52,22 +54,9 @@ void ofApp::setup(){
 //--------------------------------------------------------------
 void ofApp::launchVideo(unsigned int videoId) {
 	ofLogNotice("\n***** Loading video: ") << video_items[videoId].videoFile;
-	if(video_player != NULL) {
-		cout << "ABORTING" << endl;
-		std::exit(1);
-	}
-	video_player = new ofxOMXPlayer();
-	
-	vidsettings.useHDMIForAudio = true;	//default true
-	vidsettings.enableLooping = false;		//default true
-	vidsettings.enableTexture = true;		//default true
-	vidsettings.videoPath = ofToDataPath(video_items[videoId].videoFile);
 		
-	video_player->setup(vidsettings);
-	ofLogNotice("setup video player");
-	//video_player->loadMovie(ofToDataPath(video_items[videoId].videoFile));
-	//video_player->setLoopState(OF_LOOP_NONE);
-	//video_player->play();
+	video_player.loadMovie(ofToDataPath(video_items[videoId].videoFile));
+
 	controlbar_start_time = ofGetElapsedTimeMillis();
 	show_controls = true;
 	paused = false;
@@ -107,7 +96,7 @@ void ofApp::setVideoPlaypause() {
 	{
 		show_controls = true;
 	}
-//	video_player->setPaused(paused);
+//	video_player.setPaused(paused);
 
 }
 
@@ -115,23 +104,16 @@ void ofApp::setVideoPlaypause() {
 void ofApp::returnToMenu() {
 	ofLogNotice() << "Return to menu";
 	show_menu = true;
-	//video_player->close();
-	delete(video_player);
-	video_player = NULL;
+	video_player.close();
     fade_in_timer = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
-	ofLogNotice() << "update";
-	if(video_player != NULL) {
-		ofLogNotice() << "update2";
-		if((video_player->isPlaying()) && (video_player->getCurrentFrame() > 0)) {
-			cout << "video_player->getMediaTime(): " << video_player->getMediaTime() << " video_player->getDurationInSeconds(): " << video_player->getDurationInSeconds();
-			if ((video_player->getMediaTime()/video_player->getDurationInSeconds()) > 0.9999f && show_menu == false) {
-				returnToMenu();
-			}	
-		}
+void ofApp::update(){	
+	if((video_player.isPlaying()) && (video_player.getCurrentFrame() > 0)) {
+		if ((video_player.getMediaTime()/video_player.getDurationInSeconds()) > 0.9999f && show_menu == false) {
+			returnToMenu();
+		}	
 	}
 	
 	if(bUseMouse) {
@@ -151,13 +133,12 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::drawVideo() {
-	cout << "*** draw video " << endl;
-	cout << "video_player->getCurrentFrame() = " << video_player->getCurrentFrame() << endl;
+	cout << "video_player.getCurrentFrame() = " << video_player.getCurrentFrame() << endl;
 
 	ofSetColor(255, 255, 255);
-	if(video_player->getCurrentFrame() > 0) {
-		video_player->draw(0, video_pos_y, video_width, video_height);
-		video_player->setVolumeNormalized(1.0f);
+	if(video_player.getCurrentFrame() > 0) {
+		video_player.draw(0, video_pos_y, video_width, video_height);
+		video_player.setVolumeNormalized(1.0f);
 	}
 	
 
@@ -203,7 +184,7 @@ void ofApp::drawVideo() {
 	/*ofSetColor(icon_highlight_color);
 	progress_bar_played.x = progress_bar.x;
 	progress_bar_played.y = progress_bar.y;
-	progress_bar_played.width = progress_bar.width * video_player->getPosition();
+	progress_bar_played.width = progress_bar.width * video_player.getPosition();
 	progress_bar_played.height = progress_bar.height;
 	ofDrawRectRounded(progress_bar_played, 15);
 	*/
@@ -326,16 +307,14 @@ void ofApp::mouseReleased(int x, int y, int button){
 void ofApp::handleVideoTouch(int x, int y, int button)
 {
 	
-	if (!show_menu && (video_player != NULL)) {
-		if(video_player->getCurrentFrame() > 0) { 
+	if (!show_menu) { 
 		if (x >= icon_back_background.x &&
 			x <= icon_back_background.x + icon_back_background.width &&
 			y >= icon_back_background.y &&
 			y <= icon_back_background.y + icon_back_background.height) {
 				ofLogNotice() << "Clicked on return button";
 			returnToMenu();
-		}
-		}
+		}		
 		else if(x > 0) {
 			if((ofGetElapsedTimeMillis() - controlbar_start_time) > 100)
 				setVideoPlaypause();
