@@ -12,6 +12,7 @@ void ofApp::setup(){
 	if(touch.init("/dev/input/by-id/usb-ILITEK_Multi-Touch-V300__V300_-event-if01")) {		
 		ofLogNotice() << "Using touchscreen input ";
 		bUseMouse = false;
+		ofHideCursor();
 	}
 	else {
 		ofLogNotice() << "Using mouse input";
@@ -33,6 +34,7 @@ void ofApp::setup(){
     video_width = ofGetWidth();
     video_height = ofGetWidth() / 1.777776f;
     video_pos_y = (ofGetHeight() / 2) - (video_height / 2);
+    ofLogNotice() << "video_width: " << video_width << " video_height: " << video_height << " video_pos_y: " << video_pos_y;
 
 	// stats and controls
 	show_stats = false;
@@ -91,6 +93,7 @@ void ofApp::updateMenuItems() {
 
 //--------------------------------------------------------------
 void ofApp::setVideoPlaypause() {
+	ofLogNotice() << "setVideoPlaypause";
 	controlbar_start_time = ofGetElapsedTimeMillis();
 	//paused = !paused;
 	//if (paused) 
@@ -119,22 +122,23 @@ void ofApp::update(){
 	
 	if(bUseMouse) {
 		if(bMouseReleased) {
-			cout << "mousex: " << mousex << " mousey: " << mousey << endl;
+			//cout << "mousex: " << mousex << " mousey: " << mousey << endl;
 			handleVideoTouch(mousex, mousey,0);
 			bMouseReleased = false;
 		}
 	}
 	else {
-		handleVideoTouch(touch.getCoordTouch().x, touch.getCoordTouch().y,touch.getButton());
+		if(touch.getButton() == 1) {
+			handleVideoTouch(touch.getCoordTouch().x, touch.getCoordTouch().y,touch.getButton());
+		}
 	}
 	
-	if(touch.getButton() == 1) show_controls = true;
+	//if(touch.getButton() == 1) show_controls = true;
 
 }
 
 //--------------------------------------------------------------
 void ofApp::drawVideo() {
-	cout << "video_player.getCurrentFrame() = " << video_player.getCurrentFrame() << endl;
 
 	ofSetColor(255, 255, 255);
 	if(video_player.getCurrentFrame() > 0) {
@@ -154,6 +158,8 @@ void ofApp::drawVideo() {
 
 	float controlbar_timer = ofGetElapsedTimeMillis() - controlbar_start_time;
 
+	//cout << "frame = " << video_player.getCurrentFrame() <<  " controlbar_timer: " << controlbar_timer  << " controlbar_start_time: " << controlbar_start_time <<  " paused: " << paused << endl;
+	
 	float hide_anim_timer = ofMap(controlbar_timer, controlbar_show_length, controlbar_show_length + controlbar_anim_length, 1.0, 0.0);
 	float hide_back_anim_timer = ofMap(controlbar_timer, controlbar_show_length, controlbar_show_length + controlbar_anim_length, 0.0, 1.0);
 
@@ -244,13 +250,14 @@ void ofApp::drawMenu() {
 	// draw background
 	ofEnableAlphaBlending();
     ofSetColor(255, 255, 255, 255 * fade_in);
-	menu_background.draw(0, 0);
+	menu_background.draw(0, 0,ofGetWidth(),ofGetHeight());
 
 
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+	//if(ofGetFrameNum()%60 == 0) cout << ofGetFrameRate() << endl;
 	
 	if (show_menu) {
 		drawMenu();
@@ -275,6 +282,7 @@ void ofApp::keyPressed(int key){
 		video_width = ofGetWidth();
         video_height = ofGetWidth() / 1.777776f;
 		video_pos_y = (ofGetHeight() / 2) - (video_height / 2);
+
 
 		// update control bar size
 		controlbar_width = ofGetWidth();
@@ -326,6 +334,7 @@ void ofApp::handleVideoTouch(int x, int y, int button)
 			returnToMenu();
 		}		
 		else if(x > 0) {
+			//cout << "*** x = " << x << endl;
 			if((ofGetElapsedTimeMillis() - controlbar_start_time) > 100)
 				setVideoPlaypause();
 		}
@@ -344,6 +353,8 @@ void ofApp::handleVideoTouch(int x, int y, int button)
 
 //--------------------------------------------------------------
 void ofApp::windowResized(int w, int h){
+	ofLogNotice() << "Window resized  width: " << ofGetWidth() << " height: " << ofGetHeight();
+	
 	// update video sizes
 	video_width = ofGetWidth();
     video_height = ofGetWidth() / 1.777776f;
