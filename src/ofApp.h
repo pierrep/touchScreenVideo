@@ -120,4 +120,6 @@ class ofApp : public ofBaseApp{
 		int mousex;
 		int mousey;
 		bool bMouseReleased;
+		
+		int vidid;
 };

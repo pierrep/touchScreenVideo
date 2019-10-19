@@ -56,6 +56,7 @@ void ofApp::launchVideo(unsigned int videoId) {
 	ofLogNotice("\n***** Loading video: ") << video_items[videoId].videoFile;
 		
 	video_player.loadMovie(ofToDataPath(video_items[videoId].videoFile));
+	vidid = videoId;
 
 	controlbar_start_time = ofGetElapsedTimeMillis();
 	show_controls = true;
@@ -137,6 +138,15 @@ void ofApp::drawVideo() {
 
 	ofSetColor(255, 255, 255);
 	if(video_player.getCurrentFrame() > 0) {
+		
+		/*float aspecty = 1.0f/(video_player.getHeight()/1080.0f);
+		float h = aspecty*video_player.getHeight();
+		float w = aspecty*video_player.getWidth();
+		float x = (1920.0f - w)/2.0f;
+		float y = (1080.0f - h)/2.0f;
+		cout << "ASPECTY: " << aspecty << " video height: " << video_player.getHeight()  << " video width: " << video_player.getWidth() << endl;
+		video_player.draw(x, y, w, h);		*/
+		
 		video_player.draw(0, video_pos_y, video_width, video_height);
 		video_player.setVolumeNormalized(1.0f);
 	}
