@@ -5,18 +5,27 @@ void ofApp::setup(){
 
 	ofBackground(0, 0, 0);
 	ofSetVerticalSync(true);
-    ofSetLogLevel(OF_LOG_WARNING);
+    ofSetLogLevel(OF_LOG_NOTICE);
+    ofHideCursor();
+    
+    
+	if(touch.init("/dev/input/by-id/usb-ILITEK_Multi-Touch-V300__V300_-event-if01")) {		
+		ofLogNotice() << "Using touchscreen input ";
+		bUseMouse = false;
+	}
+	else {
+		ofLogNotice() << "Using mouse input";
+		bUseMouse = true;
+	}
 
     setupVideos();
     setupGui();
     setupIcons();
     setupFonts();
     
-	vidsettings.useHDMIForAudio = true;	//default true
-	vidsettings.enableLooping = false;		//default true
-	vidsettings.enableTexture = true;		//default true
+	video_player = NULL;
 	//vidsettings.listener = this;			//this app extends ofxOMXPlayerListener so it will receive events ;
-	video_player.setup(vidsettings);    
+	//video_player->setup(vidsettings); 
 
     // set up video sizes
     video_width = ofGetWidth();
@@ -42,9 +51,23 @@ void ofApp::setup(){
 // Launch Video (called from menu)
 //--------------------------------------------------------------
 void ofApp::launchVideo(unsigned int videoId) {
-	video_player.loadMovie(ofToDataPath(video_items[videoId].videoFile));
-	//video_player.setLoopState(OF_LOOP_NONE);
-	//video_player.play();
+	ofLogNotice("\n***** Loading video: ") << video_items[videoId].videoFile;
+	if(video_player != NULL) {
+		cout << "ABORTING" << endl;
+		std::exit(1);
+	}
+	video_player = new ofxOMXPlayer();
+	
+	vidsettings.useHDMIForAudio = true;	//default true
+	vidsettings.enableLooping = false;		//default true
+	vidsettings.enableTexture = true;		//default true
+	vidsettings.videoPath = ofToDataPath(video_items[videoId].videoFile);
+		
+	video_player->setup(vidsettings);
+	ofLogNotice("setup video player");
+	//video_player->loadMovie(ofToDataPath(video_items[videoId].videoFile));
+	//video_player->setLoopState(OF_LOOP_NONE);
+	//video_player->play();
 	controlbar_start_time = ofGetElapsedTimeMillis();
 	show_controls = true;
 	paused = false;
@@ -55,6 +78,7 @@ void ofApp::launchVideo(unsigned int videoId) {
 //--------------------------------------------------------------
 
 void ofApp::updateMenuItems() {
+	ofLogNotice("updating menu items - reloading videos!");
     menu_background.load(static_cast<string>(menu_background_filename));
     menu_background.resize(ofGetHeight() * 1.777777778f, ofGetHeight());
 
@@ -75,60 +99,79 @@ void ofApp::updateMenuItems() {
     }
 }
 
-// set pause
 //--------------------------------------------------------------
-
 void ofApp::setVideoPlaypause() {
 	controlbar_start_time = ofGetElapsedTimeMillis();
-	paused = !paused;
-	if (paused) {
+	//paused = !paused;
+	//if (paused) 
+	{
 		show_controls = true;
 	}
-	video_player.setPaused(paused);
+//	video_player->setPaused(paused);
+
 }
 
+//--------------------------------------------------------------
 void ofApp::returnToMenu() {
+	ofLogNotice() << "Return to menu";
 	show_menu = true;
-	video_player.close();
+	//video_player->close();
+	delete(video_player);
+	video_player = NULL;
     fade_in_timer = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	//video_player.update();
-    //if (video_player.getPosition() > 0.9999f && show_menu == false) {
-	//	returnToMenu();
-	//}
+	ofLogNotice() << "update";
+	if(video_player != NULL) {
+		ofLogNotice() << "update2";
+		if((video_player->isPlaying()) && (video_player->getCurrentFrame() > 0)) {
+			cout << "video_player->getMediaTime(): " << video_player->getMediaTime() << " video_player->getDurationInSeconds(): " << video_player->getDurationInSeconds();
+			if ((video_player->getMediaTime()/video_player->getDurationInSeconds()) > 0.9999f && show_menu == false) {
+				returnToMenu();
+			}	
+		}
+	}
 	
+	if(bUseMouse) {
+		if(bMouseReleased) {
+			cout << "mousex: " << mousex << " mousey: " << mousey << endl;
+			handleVideoTouch(mousex, mousey,0);
+			bMouseReleased = false;
+		}
+	}
+	else {
+		handleVideoTouch(touch.getCoordTouch().x, touch.getCoordTouch().y,touch.getButton());
+	}
 	
-	handleVideoTouch(touch.getCoordTouch().x, touch.getCoordTouch().y,touch.getButton());
+	if(touch.getButton() == 1) show_controls = true;
 
 }
 
 //--------------------------------------------------------------
 void ofApp::drawVideo() {
+	cout << "*** draw video " << endl;
+	cout << "video_player->getCurrentFrame() = " << video_player->getCurrentFrame() << endl;
+
 	ofSetColor(255, 255, 255);
-	video_player.draw(0, video_pos_y, video_width, video_height);
+	if(video_player->getCurrentFrame() > 0) {
+		video_player->draw(0, video_pos_y, video_width, video_height);
+		video_player->setVolumeNormalized(1.0f);
+	}
+	
 
 	float controlbar_timer = ofGetElapsedTimeMillis() - controlbar_start_time;
 
 	float hide_anim_timer = ofMap(controlbar_timer, controlbar_show_length, controlbar_show_length + controlbar_anim_length, 1.0, 0.0);
 	float hide_back_anim_timer = ofMap(controlbar_timer, controlbar_show_length, controlbar_show_length + controlbar_anim_length, 0.0, 1.0);
 
-	if (video_player.isPlaying() && show_stats) {
-		font_stats.drawString("Video is playing", 30, 650);
-	}
-	else if (show_stats) {
-		font_stats.drawString("Video is not playing", 30, 650);
-	}
-
 	if (controlbar_timer <= controlbar_show_length) {
 		controlbar_pos_y = ofGetHeight() - controlbar_height;
 		icon_back_pos_x = 30;
-		if (show_stats) {
-			font_stats.drawString("We should be displaying a controlbar", 30, 600);
-		}
 	}
+	
+	
 	if ((controlbar_timer >= controlbar_show_length) &&
 		!paused &&
 		(controlbar_timer <= controlbar_show_length + controlbar_anim_length + 1)) {
@@ -136,13 +179,11 @@ void ofApp::drawVideo() {
 		controlbar_pos_y = ofGetHeight() - (controlbar_height * hide_anim_timer);
 		// calculate position of the back button
 		icon_back_pos_x = 30 - ((icon_padding + icon_size + 40) * hide_back_anim_timer);
-		ofHideCursor();
 		show_controls = false;
-		if (show_stats) {
-			font_stats.drawString("We should be hiding a controlbar", 30, 600);
-		}
 	}
-
+	
+	//ofEnableAlphaBlending();
+/*
 	// Draw control bar
 	ofSetColor(26, 26, 26, 96);
 	ofEnableAlphaBlending();
@@ -156,23 +197,23 @@ void ofApp::drawVideo() {
 	progress_bar.width = controlbar_width - 100;
 	progress_bar.height = icon_size / 2;
 	ofDrawRectRounded(progress_bar, 15);
-
+*/
 	
 	//ofSetHexColor(0xFC4513);
 	/*ofSetColor(icon_highlight_color);
 	progress_bar_played.x = progress_bar.x;
 	progress_bar_played.y = progress_bar.y;
-	progress_bar_played.width = progress_bar.width * video_player.getPosition();
+	progress_bar_played.width = progress_bar.width * video_player->getPosition();
 	progress_bar_played.height = progress_bar.height;
 	ofDrawRectRounded(progress_bar_played, 15);
 	*/
 
 	// get position of play/pause button
-	icon_playpause_pos_x = controlbar_width / 2 - icon_size / 2;
-	icon_playpause_pos_y = controlbar_pos_y + (controlbar_height / 2) - (progress_bar.height / 2);
+	//icon_playpause_pos_x = controlbar_width / 2 - icon_size / 2;
+	//icon_playpause_pos_y = controlbar_pos_y + (controlbar_height / 2) - (progress_bar.height / 2);
 
 	// draw button background if hovered
-	if (icon_playpause_hover) {
+	/*if (icon_playpause_hover) {
 		ofSetColor(icon_highlight_color);
 		icon_playpause_background.x = icon_playpause_pos_x - icon_padding;
 		icon_playpause_background.y = icon_playpause_pos_y - icon_padding;
@@ -180,6 +221,7 @@ void ofApp::drawVideo() {
 		icon_playpause_background.height = icon_size + (icon_padding * 2);
 		ofDrawRectRounded(icon_playpause_background, 5);
 	}
+	* */
 	// draw background for back button
 	ofSetColor(icon_highlight_color);
 	icon_back_background.x = icon_back_pos_x - icon_padding;
@@ -190,14 +232,16 @@ void ofApp::drawVideo() {
 
 	// draw button
 	ofSetColor(255);
+	/*
 	if (paused) {
         icon_play.draw(icon_playpause_pos_x, icon_playpause_pos_y);
 	}
 	else {
 		icon_pause.draw(icon_playpause_pos_x, icon_playpause_pos_y);
 	}
+	*/
 	icon_back.draw(icon_back_pos_x, 30);
-	ofDisableAlphaBlending();
+	//ofDisableAlphaBlending();
 
 }
 
@@ -224,18 +268,6 @@ void ofApp::draw(){
 		drawVideo();
 	}
 
-	if (show_stats) {
-        ofSetColor(255);
-		gui.draw();
-		
-		font_stats.drawString("Controlbar start time: " + to_string(controlbar_start_time), 30, ofGetHeight() - 160);
-		//font_stats.drawString("Video duration: " + to_string(video_player.getDuration()), 30, ofGetHeight() - 120);
-		//font_stats.drawString("Video progress: " + to_string(video_player.getPosition()), 30, ofGetHeight() - 90);
-		font_stats.drawString("Video width: " + to_string(video_width), 30, ofGetHeight() - 60);
-		font_stats.drawString("Video height: " + to_string(video_height), 30, ofGetHeight() - 30);
-
-	}
-
 }
 
 //--------------------------------------------------------------
@@ -243,7 +275,7 @@ void ofApp::keyPressed(int key){
 	switch (key) {
 	case ' ':
 		if (!show_menu) {
-			setVideoPlaypause();
+			//setVideoPlaypause();
 		}
 		break;
 	case 'f':
@@ -268,71 +300,45 @@ void ofApp::keyPressed(int key){
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
 	ofShowCursor();
-	if (!show_menu) {
-		icon_playpause_hover = false;
-		if (show_controls) {
-			if (x >= (icon_playpause_pos_x - icon_padding) &&
-				x <= (icon_playpause_pos_x + icon_size + icon_padding) &&
-				y >= (icon_playpause_pos_y - icon_padding) &&
-				y <= (icon_playpause_pos_y + icon_size + icon_padding)) {
-				icon_playpause_hover = true;
-			}
-		}
-	}
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-	
-	if (!show_menu) {
-		if (x >= progress_bar.x &&
-			x <= progress_bar.x + progress_bar.width &&
-			y >= progress_bar.y &&
-			y <= progress_bar.y + progress_bar.height) {
 
-	//		video_player.setPosition((x - progress_bar.x) / progress_bar.width);
-			controlbar_start_time = ofGetElapsedTimeMillis();
-		}
-	}
 }
 
+//--------------------------------------------------------------
+void ofApp::mousePressed(int x, int y, int button)
+{
+	if(button == 1) std::exit(1);
+	
+}
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-	handleVideoTouch(x,y,button);
+	//handleVideoTouch(x,y,button);
+	mousex = x;
+	mousey = y;
+	bMouseReleased = true;
 }
 
 //--------------------------------------------------------------
 void ofApp::handleVideoTouch(int x, int y, int button)
 {
-	if (!show_menu) {
-		// handle clicking on play / pause button
-		if (x >= (icon_playpause_pos_x - icon_padding) &&
-			x <= (icon_playpause_pos_x + icon_size + icon_padding) &&
-			y >= (icon_playpause_pos_y - icon_padding) &&
-			y <= (icon_playpause_pos_y + icon_size + icon_padding)) {
-
-			setVideoPlaypause();
-		}
-		// handle clicking on progress bar
-		else if (x >= progress_bar.x &&
-			x <= progress_bar.x + progress_bar.width &&
-			y >= progress_bar.y &&
-			y <= progress_bar.y + progress_bar.height) {
-
-		//	video_player.setPosition((x - progress_bar.x) / progress_bar.width);
-			controlbar_start_time = ofGetElapsedTimeMillis();
-		}
-		else if (x >= icon_back_background.x &&
+	
+	if (!show_menu && (video_player != NULL)) {
+		if(video_player->getCurrentFrame() > 0) { 
+		if (x >= icon_back_background.x &&
 			x <= icon_back_background.x + icon_back_background.width &&
 			y >= icon_back_background.y &&
 			y <= icon_back_background.y + icon_back_background.height) {
+				ofLogNotice() << "Clicked on return button";
 			returnToMenu();
 		}
-		else if (true) {
-			if (y <= controlbar_pos_y) {
+		}
+		else if(x > 0) {
+			if((ofGetElapsedTimeMillis() - controlbar_start_time) > 100)
 				setVideoPlaypause();
-			}
 		}
 	}
 	else if (show_menu) {

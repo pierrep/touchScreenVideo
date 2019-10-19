@@ -25,6 +25,7 @@ class ofApp : public ofBaseApp{
 		void mouseMoved(int x, int y );
 		void mouseDragged(int x, int y, int button);        
 		void mouseReleased(int x, int y, int button);
+		void mousePressed(int x, int y, int button);
 		void windowResized(int w, int h);
         void exit();
 
@@ -41,7 +42,7 @@ class ofApp : public ofBaseApp{
         void setupFonts();
         void handleVideoTouch(int x, int y, int button);
 
-		ofxOMXPlayer	video_player;
+		ofxOMXPlayer*	video_player;
 		ofxOMXPlayerSettings vidsettings;
 		float			video_width;
 		float			video_height;
@@ -114,4 +115,9 @@ class ofApp : public ofBaseApp{
 		
 		//RPI multitouch
 		ofxRPiTouch touch;
+		
+		bool bUseMouse;
+		int mousex;
+		int mousey;
+		bool bMouseReleased;
 };
