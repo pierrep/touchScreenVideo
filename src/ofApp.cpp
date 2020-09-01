@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+#define TIMEOUT 1000*60*5
+
 //--------------------------------------------------------------
 void ofApp::setup(){
 
@@ -54,6 +56,7 @@ void ofApp::setup(){
 	currentVideoId = 0;
 	launchVideo(currentVideoId);
 	show_menu = false;
+	timeSinceInteraction = ofGetElapsedTimeMillis();
 
 }
 
@@ -117,7 +120,7 @@ void ofApp::returnToMenu() {
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){	
+void ofApp::update(){
 	if(waiting_for_start) {
 		if((video_player.isPlaying()) && (video_player.getCurrentFrame() > 0)) {
 			if ((video_player.getMediaTime()/video_player.getDurationInSeconds()) > 0.9999f && show_menu == false) {
@@ -133,8 +136,22 @@ void ofApp::update(){
 				waiting_for_start = false;
 				returnToMenu();
 			}
+		} else {
+			if(touch.getButton() == 1) {
+				waiting_for_start = false;
+				returnToMenu();
+			}
 		}	
 	} else {
+		if((ofGetElapsedTimeMillis() - timeSinceInteraction) > TIMEOUT)	{
+			ofLogNotice() << "**** TIMEOUT";
+			timeSinceInteraction = ofGetElapsedTimeMillis();
+			waiting_for_start = true;
+			currentVideoId = 0;
+			launchVideo(currentVideoId);
+			show_menu = false;			
+		}
+	
 		if((video_player.isPlaying()) && (video_player.getCurrentFrame() > 0)) {
 			if ((video_player.getMediaTime()/video_player.getDurationInSeconds()) > 0.9999f && show_menu == false) {
 				returnToMenu();
@@ -258,17 +275,19 @@ void ofApp::keyPressed(int key){
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
 	ofShowCursor();
+	timeSinceInteraction = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-
+	timeSinceInteraction = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button)
 {
 	if(button == 1) std::exit(1);
+	timeSinceInteraction = ofGetElapsedTimeMillis();
 	
 }
 
@@ -277,11 +296,13 @@ void ofApp::mouseReleased(int x, int y, int button){
 	mousex = x;
 	mousey = y;
 	bMouseReleased = true;
+	timeSinceInteraction = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
 void ofApp::handleVideoTouch(int x, int y, int button)
 {	
+	timeSinceInteraction = ofGetElapsedTimeMillis();
 	if (!show_menu) { 
 		if (x >= icon_back_background.x &&
 			x <= icon_back_background.x + icon_back_background.width &&

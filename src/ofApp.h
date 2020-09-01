@@ -124,4 +124,6 @@ class ofApp : public ofBaseApp{
 		int currentVideoId;
 		bool waiting_for_start;
 		ofImage start_button;
+		
+		float timeSinceInteraction;
 };
