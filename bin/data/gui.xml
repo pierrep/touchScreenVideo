@@ -4,10 +4,8 @@
 	<controlbar_anim_length>500</controlbar_anim_length>
 	<icon_padding>10</icon_padding>
 	<fonts_space_between_words>8.5</fonts_space_between_words>
-	<menu_margin_x>0.15</menu_margin_x>
-	<menu_margin_y>0.1</menu_margin_y>
-	<font_title_color>252, 69, 19, 255</font_title_color>
-	<icon_highlight_color>252, 69, 19, 255</icon_highlight_color>
+	<font_title_color>0, 15, 24, 255</font_title_color>
+	<icon_highlight_color>0, 15, 24, 255</icon_highlight_color>
 	<menu_background_img_filename>backgrounds/background.jpg</menu_background_img_filename>
 	<font_main_regular_filename_ttf>fonts/opensans-regular.ttf</font_main_regular_filename_ttf>
 	<font_main_italic_filename_ttf>fonts/opensans-italic.ttf</font_main_italic_filename_ttf>

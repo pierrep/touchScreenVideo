@@ -6,8 +6,9 @@
 void ofApp::setup(){
 
 	ofBackground(0, 0, 0);
-	ofSetVerticalSync(true);
-    ofSetLogLevel(OF_LOG_NOTICE);
+	ofSetVerticalSync(false);
+	ofSetFrameRate(30);
+    ofSetLogLevel(OF_LOG_VERBOSE);
     ofHideCursor();
         
 	if(touch.init("/dev/input/by-id/usb-ILITEK_Multi-Touch-V300__V300_-event-if01")) {		
@@ -57,6 +58,8 @@ void ofApp::setup(){
 	launchVideo(currentVideoId);
 	show_menu = false;
 	timeSinceInteraction = ofGetElapsedTimeMillis();
+	
+	video_player.setVolumeNormalized(0.0f);	
 
 }
 
@@ -121,6 +124,7 @@ void ofApp::returnToMenu() {
 
 //--------------------------------------------------------------
 void ofApp::update(){
+
 	if(waiting_for_start) {
 		if((video_player.isPlaying()) && (video_player.getCurrentFrame() > 0)) {
 			if ((video_player.getMediaTime()/video_player.getDurationInSeconds()) > 0.9999f && show_menu == false) {
@@ -128,17 +132,23 @@ void ofApp::update(){
 				if(currentVideoId >= 3) {
 					currentVideoId = 0;
 				}
+				video_player.setVolumeNormalized(0.0f);					
 				launchVideo(currentVideoId);
+				video_player.setVolumeNormalized(0.0f);	
+				ofLogNotice() << "Volume: " << video_player.getVolumeNormalized();
 			}	
 		}	
 		if(bUseMouse) {
 			if(bMouseReleased) {
-				waiting_for_start = false;
+				waiting_for_start = false;					
+				timeSinceInteraction = ofGetElapsedTimeMillis();
 				returnToMenu();
 			}
 		} else {
 			if(touch.getButton() == 1) {
 				waiting_for_start = false;
+				timeSinceInteraction = ofGetElapsedTimeMillis();
+				ofLogNotice() << "Waiting for start disabled";			
 				returnToMenu();
 			}
 		}	
@@ -148,7 +158,9 @@ void ofApp::update(){
 			timeSinceInteraction = ofGetElapsedTimeMillis();
 			waiting_for_start = true;
 			currentVideoId = 0;
+			video_player.setVolumeNormalized(0.0f);	
 			launchVideo(currentVideoId);
+			video_player.setVolumeNormalized(0.0f);
 			show_menu = false;			
 		}
 	
@@ -178,7 +190,7 @@ void ofApp::drawVideo() {
 	ofSetColor(255, 255, 255);
 	if(video_player.getCurrentFrame() > 0) {		
 		video_player.draw(0, video_pos_y, video_width, video_height);
-		video_player.setVolume(1.5f);
+		//video_player.setVolume(0.1f);
 	}
 
 	float controlbar_timer = ofGetElapsedTimeMillis() - controlbar_start_time;	
@@ -230,8 +242,7 @@ void ofApp::draw(){
 	{
 		ofSetColor(255, 255, 255);
 		if(video_player.getCurrentFrame() > 0) {		
-			video_player.draw(0, video_pos_y, video_width, video_height);
-			video_player.setVolume(0.0f);			
+			video_player.draw(0, video_pos_y, video_width, video_height);					
 		}
 		start_button.draw(ofGetWidth()/2-start_button.getWidth()/2,ofGetHeight()/2-start_button.getHeight()/2);
 	} else {	
@@ -303,6 +314,8 @@ void ofApp::mouseReleased(int x, int y, int button){
 void ofApp::handleVideoTouch(int x, int y, int button)
 {	
 	timeSinceInteraction = ofGetElapsedTimeMillis();
+	if(waiting_for_start) return;
+	
 	if (!show_menu) { 
 		if (x >= icon_back_background.x &&
 			x <= icon_back_background.x + icon_back_background.width &&
@@ -323,6 +336,7 @@ void ofApp::handleVideoTouch(int x, int y, int button)
 				y >= video_items[i].itemBox.y &&
 				y <= video_items[i].itemBox.y + video_items[i].itemBox.height) {
 				launchVideo(i);
+				video_player.setVolumeNormalized(0.4f);
 			}
 		}
 	}	
